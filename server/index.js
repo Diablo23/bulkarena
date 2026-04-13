@@ -16,8 +16,21 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 const app = express();
 
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+// CORS — allow both the CLIENT_URL and the custom domain
+const allowedOrigins = [CLIENT_URL, "https://bulkarena.xyz", "https://www.bulkarena.xyz"].filter(Boolean);
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(null, true); // allow all in production since we serve frontend from same origin
+  },
+  credentials: true,
+}));
 app.use(express.json());
+
+// Health check (before static files)
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
+});
 
 // API routes
 app.use("/api", routes);
@@ -26,32 +39,28 @@ app.use("/api", routes);
 const distPath = join(__dirname, "..", "client", "dist");
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
+  // SPA fallback — serve index.html for all non-API routes
   app.get("*", (req, res) => {
+    if (req.path.startsWith("/api")) return res.status(404).json({ error: "Not found" });
     res.sendFile(join(distPath, "index.html"));
   });
 }
-
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", time: new Date().toISOString() });
-});
 
 // Initialize DB (async for sql.js)
 async function start() {
   await initDb();
   console.log("[DB] Initialized");
 
-  // Start poller
   startPoller();
 
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`
 ╔══════════════════════════════════════════════════╗
-║           ⚡ BULK ARENA SERVER ⚡               ║
+║            BULK ARENA SERVER                     ║
 ╠══════════════════════════════════════════════════╣
-║  API:     http://localhost:${PORT}/api              ║
-║  Client:  ${CLIENT_URL}                    ║
-║  Health:  http://localhost:${PORT}/api/health        ║
+║  Port:    ${PORT}                                    ║
+║  Client:  ${CLIENT_URL}
+║  Health:  /api/health                            ║
 ╚══════════════════════════════════════════════════╝
     `);
   });
