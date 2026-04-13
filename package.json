@@ -6,9 +6,8 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && node index.js",
     "dev:client": "cd client && npx vite",
-    "build": "cd client && npm install && npx vite build",
-    "start": "cd server && node index.js",
-    "postinstall": "cd server && npm install && cd ../client && npm install"
+    "build": "cd server && npm install && cd ../client && npm install && npx vite build",
+    "start": "cd server && node index.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"
