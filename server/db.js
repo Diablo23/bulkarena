@@ -1,10 +1,12 @@
 import initSqlJs from "sql.js";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "arena.db");
+const DATA_DIR = join(__dirname, "data");
+if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+const DB_PATH = join(DATA_DIR, "arena.db");
 
 let db;
 let saveTimer;
